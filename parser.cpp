@@ -41,7 +41,7 @@ int main() {
 	cout << "start" << endl;
 
 	p = 0;
-	b = 0;
+	b = 2;
 	int key = 0;
 	int top, top_low;//栈顶，次栈顶
 
@@ -55,6 +55,7 @@ int main() {
 	ifstream f;
 
 	string path;
+	int flag = 0;
 
 	cout << "请输入文件名:" << endl;
 	cin >> path;
@@ -85,7 +86,7 @@ int main() {
 				s.push(s.get(b + i.a));
 			}
 			else if (i.t == 1) {
-				s.push(s.get(i.a));
+				s.push(s.get(2 + i.a));
 			}
 			break;
 		case 2://STO
@@ -93,7 +94,7 @@ int main() {
 				s.set(b + i.a, s.top());
 			}
 			else if (i.t == 1) {
-				s.set(i.a, s.top());
+				s.set(2 + i.a, s.top());
 			}
 			s.pop();
 			break;
@@ -102,7 +103,7 @@ int main() {
 			s.set(s.getTop(), b);
 			s.set(s.getTop() + 1, p);
 			//移动当前函数的基地址
-			b = s.getTop();
+			b = s.getTop() + 2;
 			//切换指令为被调用函数的地址
 			p = i.a;
 			//移动栈顶至开辟
@@ -112,7 +113,22 @@ int main() {
 			s.setTop(s.getTop() + i.a);
 			break;
 		case 5://JMP
-			p = i.a;
+			if (!flag) {
+				//两个隐式空间存栈调用的地址与指令调用的地址
+				s.set(s.getTop(), b);
+				s.set(s.getTop() + 1, p);
+				//移动当前函数的基地址
+				b = s.getTop() + 2;
+				//切换指令为被调用函数的地址
+				p = i.a;
+				//移动栈顶至开辟
+				s.setTop(s.getTop() + 2);
+				flag = 1;
+			}
+			else {
+				p = i.a;
+			}
+			
 			break;
 		case 6://JPC
 			if (s.top() == 0)
@@ -161,8 +177,8 @@ int main() {
 		case 13://RET
 			s.setTop(b);
 			cout << "s.Top " << s.getTop() << endl;
-			b = s.get(s.getTop());
-			p = s.get(s.getTop() + 1);
+			b = s.get(s.getTop() - 2);
+			p = s.get(s.getTop() - 1);
 			break;
 		}
 	} while (p != 0);
