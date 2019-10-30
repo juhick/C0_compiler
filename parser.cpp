@@ -45,8 +45,8 @@ int main() {
 	int key = 0;
 	int top, top_low;//’ª∂•£¨¥Œ’ª∂•
 
-	//s.push(0);
-	//s.push(0);
+	s.push(0);
+	s.push(0);
 
 	//÷∏¡Ó’ª
 	Stack<Instruction>is(1000);
