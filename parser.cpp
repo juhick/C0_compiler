@@ -6,15 +6,15 @@
 #include"Stack.cpp"
 
 using namespace std;
-//指令结构体，存指令的三项
+//指令结构体，存指令的三部分
 struct Instruction{
 	string code;
-	int t;
-	int a;
+	int t = 0;
+	int a = 0;
 };
 
 int main() {
-	//指令进行映射编码编码
+	//指令进行映射编码
 	map<string, int> instruction;
 
 	instruction["LIT"] = 0;
@@ -31,157 +31,141 @@ int main() {
 	instruction["RED"] = 11;
 	instruction["WRT"] = 12;
 	instruction["RET"] = 13;
-	//数据栈
-	Stack<int>s(10000, 0);
-
-	int p, b, a;
+	//运行栈
+	Stack<int>running(10000, 0);
+	//指令地址、当前函数基地址、参数
+	int position, base, arg;
 	//暂存每一条指令
 	Instruction i;
 
-	cout << "start" << endl;
-
-	p = 0;
-	b = 2;
+	//cout << "start" << endl;
+	//初始化指令地址与函数基址
+	position = 0;
+	base = 0;
 	int key = 0;
 	int top, top_low;//栈顶，次栈顶
-
-	s.push(0);
-	s.push(0);
+	//全局的返回量
+	running.push(0);
+	running.push(0);
 
 	//指令栈
-	Stack<Instruction>is(1000);
+	Stack<Instruction>ins(1000);
 
 	//文件输入流
-	ifstream f;
+	ifstream file;
 
 	string path;
-	int flag = 0;
 
 	cout << "请输入文件名:" << endl;
 	cin >> path;
 	//打开文件
-	f.open(path);
+	file.open(path);
 	//从文件中逐个读取指令
-	while (f >> i.code) {
-		f >> i.t;
-		f >> i.a;
-		is.push(i);
+	while (file >> i.code) {
+		file >> i.t;
+		file >> i.a;
+		ins.push(i);
 	}
 	//关闭文件
-	f.close();
+	file.close();
 	//开始逐行解释指令
 	do {
-		i = is.get(p);
+		i = ins.get(position);
 		//将当前指令编号与对应的指令输出显示（便与调试，正式使用时需要去掉）
-		cout << "p:" << p << ' ' << i.code << ' ' << i.t << ' ' << i.a << endl;
+		cout << "p:" << position << ' ' << i.code << ' ' << i.t << ' ' << i.a << endl;
 		//顺序执行（若没有跳转程度）
-		p++;
+		position++;
 		//判断是哪个指令
 		switch (instruction[i.code]) {
 		case 0://LIT
-			s.push(i.a);
+			running.push(i.a);
 			break;
 		case 1://LOD
 			if (i.t == 0) {
-				s.push(s.get(b + i.a));
+				running.push(running.get(base + i.a + 2));
 			}
 			else if (i.t == 1) {
-				s.push(s.get(2 + i.a));
+				running.push(running.get(2 + i.a));
 			}
 			break;
 		case 2://STO
 			if (i.t == 0) {
-				s.set(b + i.a, s.top());
+				running.set(base + i.a + 2, running.top());
 			}
 			else if (i.t == 1) {
-				s.set(2 + i.a, s.top());
+				running.set(2 + i.a, running.top());
 			}
-			s.pop();
+			running.pop();
 			break;
 		case 3://CAL
 			//两个隐式空间存栈调用的地址与指令调用的地址
-			s.set(s.getTop(), b);
-			s.set(s.getTop() + 1, p);
+			running.set(running.getTop(), base);
+			running.set(running.getTop() + 1, position);
 			//移动当前函数的基地址
-			b = s.getTop() + 2;
+			base = running.getTop();
 			//切换指令为被调用函数的地址
-			p = i.a;
-			//移动栈顶至开辟
-			s.setTop(s.getTop() + 2);
+			position = i.a;
+			//移动栈顶至开辟后的位置
+			running.setTop(running.getTop() + 2);
 			break;
 		case 4://INT
-			s.setTop(s.getTop() + i.a);
+			running.setTop(running.getTop() + i.a);
 			break;
 		case 5://JMP
-			if (!flag) {
-				//两个隐式空间存栈调用的地址与指令调用的地址
-				s.set(s.getTop(), b);
-				s.set(s.getTop() + 1, p);
-				//移动当前函数的基地址
-				b = s.getTop() + 2;
-				//切换指令为被调用函数的地址
-				p = i.a;
-				//移动栈顶至开辟
-				s.setTop(s.getTop() + 2);
-				flag = 1;
-			}
-			else {
-				p = i.a;
-			}
-			
+			position = i.a;
 			break;
 		case 6://JPC
-			if (s.top() == 0)
+			if (running.top() == 0)
 			{
-				p = i.a;
+				position = i.a;
 			}
-			s.pop();
+			running.pop();
 			break;
 		case 7://ADD
-			top = s.top();
-			s.pop();
-			top_low = s.top();
-			s.pop();
-			s.push(top + top_low);
+			top = running.top();
+			running.pop();
+			top_low = running.top();
+			running.pop();
+			running.push(top + top_low);
 			break;
 		case 8://SUB
-			top = s.top();
-			s.pop();
-			top_low = s.top();
-			s.pop();
-			s.push(top_low - top);
+			top = running.top();
+			running.pop();
+			top_low = running.top();
+			running.pop();
+			running.push(top_low - top);
 			break;
 		case 9://MUL
-			top = s.top();
-			s.pop();
-			top_low = s.top();
-			s.pop();
-			s.push(top_low * top);
+			top = running.top();
+			running.pop();
+			top_low = running.top();
+			running.pop();
+			running.push(top_low * top);
 			break;
 		case 10://DIV
-			top = s.top();
-			s.pop();
-			top_low = s.top();
-			s.pop();
-			s.push(top_low / top);
+			top = running.top();
+			running.pop();
+			top_low = running.top();
+			running.pop();
+			running.push(top_low / top);
 			break;
 		case 11://RED
-			cin >> a;
-			s.push(a);
+			cin >> arg;
+			running.push(arg);
 			break;
 		case 12://WRT
-			a = s.top();
-			s.pop();
-			cout << a << endl;
+			arg = running.top();
+			running.pop();
+			cout << arg << endl;
 			break;
 		case 13://RET
-			s.setTop(b);
-			cout << "s.Top " << s.getTop() << endl;
-			b = s.get(s.getTop() - 2);
-			p = s.get(s.getTop() - 1);
+			running.setTop(base);
+			cout << "s.Top " << running.getTop() << endl;
+			base = running.get(running.getTop());
+			position = running.get(running.getTop() + 1);
 			break;
 		}
-	} while (p != 0);
+	} while (position != 0);
 
 	return 0;
 }
