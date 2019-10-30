@@ -31,10 +31,13 @@ int main() {
 	instruction["RED"] = 11;
 	instruction["WRT"] = 12;
 	instruction["RET"] = 13;
+
 	//运行栈
 	Stack<int>running(10000, 0);
+
 	//指令地址、当前函数基地址、参数
 	int position, base, arg;
+
 	//暂存每一条指令
 	Instruction i;
 
@@ -44,6 +47,7 @@ int main() {
 	base = 0;
 	int key = 0;
 	int top, top_low;//栈顶，次栈顶
+
 	//全局的返回量
 	running.push(0);
 	running.push(0);
@@ -57,24 +61,32 @@ int main() {
 	string path;
 
 	cout << "请输入文件名:" << endl;
+
 	cin >> path;
+
 	//打开文件
 	file.open(path);
+
 	//从文件中逐个读取指令
 	while (file >> i.code) {
 		file >> i.t;
 		file >> i.a;
 		ins.push(i);
 	}
+
 	//关闭文件
 	file.close();
+
 	//开始逐行解释指令
 	do {
 		i = ins.get(position);
+
 		//将当前指令编号与对应的指令输出显示（便与调试，正式使用时需要去掉）
 		cout << "p:" << position << ' ' << i.code << ' ' << i.t << ' ' << i.a << endl;
+
 		//顺序执行（若没有跳转程度）
 		position++;
+
 		//判断是哪个指令
 		switch (instruction[i.code]) {
 		case 0://LIT
@@ -101,10 +113,13 @@ int main() {
 			//两个隐式空间存栈调用的地址与指令调用的地址
 			running.set(running.getTop(), base);
 			running.set(running.getTop() + 1, position);
+
 			//移动当前函数的基地址
 			base = running.getTop();
+
 			//切换指令为被调用函数的地址
 			position = i.a;
+
 			//移动栈顶至开辟后的位置
 			running.setTop(running.getTop() + 2);
 			break;
